@@ -27,11 +27,13 @@
           <span class="icon">🔍</span>
           <input type="text" id="search-input" placeholder="Search tasks…" autocomplete="off">
         </div>
-        <button class="header-btn" id="btn-chat" title="Team Chat">
+        <button class="header-btn" id="btn-help" title="Help & Instructions" aria-label="Help and Instructions">❓</button>
+        <button class="header-btn" id="btn-settings" title="Appearance Settings" aria-label="Appearance Settings">⚙️</button>
+        <button class="header-btn" id="btn-chat" title="Team Chat" aria-label="Team Chat">
           💬
           <span class="badge hidden" id="chat-badge">0</span>
         </button>
-        <button class="header-btn" id="btn-team" title="Team Members">👥</button>
+        <button class="header-btn" id="btn-team" title="Team Members" aria-label="Team Members List">👥</button>
       </div>
     </header>
 
@@ -181,6 +183,58 @@
 
   <!-- ── Filter Dropdowns (positioned absolutely via JS) ── -->
   <div class="modal-overlay hidden" id="filter-overlay" style="background:transparent;backdrop-filter:none;"></div>
+
+  <!-- ── Help Modal ── -->
+  <div class="modal-overlay hidden" id="help-overlay">
+    <div class="modal-container" role="dialog" aria-labelledby="help-title">
+      <div class="modal-header">
+        <h2 id="help-title">❓ Help & Instructions</h2>
+        <button class="modal-close" id="help-close" aria-label="Close help">✕</button>
+      </div>
+      <div class="modal-body" style="line-height: 1.6;">
+        <p style="margin-bottom: 12px;">Welcome to <strong>team collaborator - Kekron Mekron Inc</strong>.</p>
+        
+        <h4 style="margin: 16px 0 8px; color: var(--accent-primary);">Accessing the Site</h4>
+        <ul style="margin-left: 20px; margin-bottom: 16px;">
+          <li><strong>Credentials:</strong> Use the sample username <code>admin</code> and password <code>KekronMekron@2026</code> to log in.</li>
+          <li><strong>Authentication:</strong> All board data is protected behind secure Google Secret Manager authentication.</li>
+        </ul>
+
+        <h4 style="margin: 16px 0 8px; color: var(--accent-primary);">Features</h4>
+        <ul style="margin-left: 20px;">
+          <li><strong>Kanban Board:</strong> Drag and drop tasks between columns. Click a task to edit or delete it.</li>
+          <li><strong>AI Agent:</strong> Open the 💬 Chat panel and switch to the ✨ <strong>ai-agent</strong> channel. Ask for summaries of your tasks or recent chat history.</li>
+          <li><strong>Accessibility:</strong> Use <code>Tab</code> to navigate and <code>Enter</code> to interact. Modals can be closed with <code>Esc</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings Modal ── -->
+  <div class="modal-overlay hidden" id="settings-overlay">
+    <div class="modal-container" role="dialog" aria-labelledby="settings-title" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2 id="settings-title">⚙️ Appearance Settings</h2>
+        <button class="modal-close" id="settings-close" aria-label="Close settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Theme Preference</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="radio" name="theme-radio" value="dark" checked> Modern Dark (Default)
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="radio" name="theme-radio" value="light"> Clean Light
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="radio" name="theme-radio" value="oled"> OLED Black
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

@@ -655,8 +655,39 @@ function init() {
       closeModal();
       closeTeamPanel();
       closeFilterDropdown();
+      $('#help-overlay').classList.add('hidden');
+      $('#settings-overlay').classList.add('hidden');
     }
   });
+
+  // Help Modal
+  $('#btn-help').addEventListener('click', () => $('#help-overlay').classList.remove('hidden'));
+  $('#help-close').addEventListener('click', () => $('#help-overlay').classList.add('hidden'));
+  $('#help-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) $('#help-overlay').classList.add('hidden'); });
+
+  // Settings Modal
+  $('#btn-settings').addEventListener('click', () => $('#settings-overlay').classList.remove('hidden'));
+  $('#settings-close').addEventListener('click', () => $('#settings-overlay').classList.add('hidden'));
+  $('#settings-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) $('#settings-overlay').classList.add('hidden'); });
+
+  // Theme Toggling
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  setTheme(savedTheme);
+  const radio = $(`input[name="theme-radio"][value="${savedTheme}"]`);
+  if (radio) radio.checked = true;
+
+  $$('input[name="theme-radio"]').forEach(r => {
+    r.addEventListener('change', e => {
+      setTheme(e.target.value);
+    });
+  });
+}
+
+function setTheme(theme) {
+  document.body.classList.remove('theme-light', 'theme-oled');
+  if (theme === 'light') document.body.classList.add('theme-light');
+  if (theme === 'oled') document.body.classList.add('theme-oled');
+  localStorage.setItem('theme', theme);
 }
 
 document.addEventListener('DOMContentLoaded', init);
