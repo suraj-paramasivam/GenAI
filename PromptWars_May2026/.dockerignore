@@ -1,0 +1,6 @@
+# ─── keep only what's needed ───
+Dockerfile
+nginx.conf
+index.html
+index.css
+app.js
