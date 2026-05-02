@@ -1,6 +1,4 @@
-# ─── keep only what's needed ───
-Dockerfile
+node_modules
+.git
+.dockerignore
 nginx.conf
-index.html
-index.css
-app.js

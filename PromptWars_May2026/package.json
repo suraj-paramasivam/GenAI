@@ -1,0 +1,14 @@
+{
+  "name": "team-collaborator",
+  "version": "1.0.0",
+  "description": "Team Collaborator - Kekron Mekron Inc",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cookie-parser": "^1.4.7",
+    "@google-cloud/secret-manager": "^5.6.0"
+  }
+}

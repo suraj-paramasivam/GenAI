@@ -602,6 +602,24 @@ body {
 .team-add-row { display: flex; gap: 8px; }
 .team-add-row input { flex: 1; }
 
+.chat-msg.ai .chat-msg-avatar { background: var(--accent-gradient); font-size: 14px; }
+.chat-msg.ai .chat-msg-text { color: var(--text-primary); }
+
+.typing-indicator {
+  display: flex; gap: 4px; padding: 4px 0;
+}
+.typing-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-tertiary);
+  animation: typing 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typing {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
 /* ── Utility ── */
 .hidden { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }

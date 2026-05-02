@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   ScrumFlow — app.js
+   team collaborator - Kekron Mekron Inc — app.js
    ═══════════════════════════════════════════ */
 
 // ── Constants ──
@@ -62,6 +62,9 @@ function defaultState() {
         { sender: 'm3', text: 'What about adding a dark/light theme toggle?', time: '2026-05-02T09:25:00' },
         { sender: 'm4', text: 'Love it! Let\'s add it to the backlog for Sprint 2', time: '2026-05-02T09:28:00' },
       ],
+      agent: [
+        { sender: 'agent', text: 'Hello! I am your AI assistant. I can summarize your tasks for the day or tell you about recent team chats. How can I help?', time: new Date().toISOString() }
+      ]
     },
     nextId: 11,
   };
@@ -327,22 +330,46 @@ function renderChat() {
   container.innerHTML = '';
 
   messages.forEach(msg => {
-    const member = getMember(msg.sender);
+    let member;
+    let isAi = msg.sender === 'agent';
+    
+    if (isAi) {
+      member = { name: 'AI Agent', color: 'transparent', isAi: true };
+    } else {
+      member = getMember(msg.sender);
+    }
     if (!member) return;
+    
     const el = document.createElement('div');
-    el.className = 'chat-msg';
+    el.className = `chat-msg ${isAi ? 'ai' : ''}`;
+    
+    const avatarHtml = isAi ? '✨' : initials(member.name);
+    
     el.innerHTML = `
-      <div class="chat-msg-avatar" style="background:${member.color}">${initials(member.name)}</div>
+      <div class="chat-msg-avatar" style="background:${member.color}">${avatarHtml}</div>
       <div class="chat-msg-body">
         <div class="chat-msg-header">
           <span class="chat-msg-name">${escHtml(member.name)}</span>
           <span class="chat-msg-time">${formatTime(msg.time)}</span>
         </div>
-        <div class="chat-msg-text">${escHtml(msg.text)}</div>
+        <div class="chat-msg-text" style="white-space: pre-wrap;">${escHtml(msg.text)}</div>
       </div>
     `;
     container.appendChild(el);
   });
+
+  if (document.querySelector('.typing-indicator')) {
+    const el = document.createElement('div');
+    el.className = 'chat-msg ai';
+    el.innerHTML = `
+      <div class="chat-msg-avatar" style="background:transparent">✨</div>
+      <div class="chat-msg-body">
+        <div class="chat-msg-header"><span class="chat-msg-name">AI Agent</span></div>
+        <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      </div>
+    `;
+    container.appendChild(el);
+  }
 
   container.scrollTop = container.scrollHeight;
 }
@@ -355,6 +382,7 @@ function sendChatMessage() {
   // Default sender is first member (simulating current user)
   const sender = state.members[0]?.id || 'm1';
   if (!state.chat[activeChannel]) state.chat[activeChannel] = [];
+  
   state.chat[activeChannel].push({
     sender,
     text,
@@ -362,6 +390,75 @@ function sendChatMessage() {
   });
 
   input.value = '';
+  saveState();
+  renderChat();
+  
+  if (activeChannel === 'agent') {
+    handleGeminiRequest(text);
+  }
+}
+
+async function handleGeminiRequest(userText) {
+  // Show typing indicator
+  const container = $('#chat-messages');
+  const typingHtml = `
+    <div class="chat-msg ai" id="ai-typing-indicator">
+      <div class="chat-msg-avatar" style="background:transparent">✨</div>
+      <div class="chat-msg-body">
+        <div class="chat-msg-header"><span class="chat-msg-name">AI Agent</span></div>
+        <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', typingHtml);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    // Gather context for the AI
+    const currentMember = state.members[0] || {};
+    const myTasks = state.tasks.filter(t => t.assignee === currentMember.id).map(t =>
+      `- ${t.title} (Status: ${t.column}, Priority: ${t.priority})`
+    );
+
+    let chatContext = '';
+    ['general', 'blockers'].forEach(ch => {
+      chatContext += `\n#${ch} channel:\n`;
+      const recent = (state.chat[ch] || []).slice(-5);
+      recent.forEach(m => {
+        const senderName = getMember(m.sender)?.name || 'Unknown';
+        chatContext += `${senderName}: ${m.text}\n`;
+      });
+    });
+
+    // Call backend proxy — API key is stored securely server-side via Secret Manager
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userMessage: userText,
+        userName: currentMember.name || 'User',
+        tasks: myTasks.join('\n') || 'No tasks currently assigned.',
+        chatContext
+      })
+    });
+
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    const data = await response.json();
+
+    state.chat.agent.push({
+      sender: 'agent',
+      text: data.reply || "I'm sorry, I couldn't generate a response.",
+      time: new Date().toISOString()
+    });
+
+  } catch (error) {
+    state.chat.agent.push({
+      sender: 'agent',
+      text: `Error: ${error.message}`,
+      time: new Date().toISOString()
+    });
+  }
+
   saveState();
   renderChat();
 }

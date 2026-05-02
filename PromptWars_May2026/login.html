@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — team collaborator - Kekron Mekron Inc</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">⚡</div>
+        <span class="login-logo-text">team collaborator</span>
+        <span class="login-sub">Kekron Mekron Inc</span>
+      </div>
+      <form id="login-form" autocomplete="off">
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter password" required>
+        </div>
+        <div class="error-msg hidden" id="error-msg"></div>
+        <button type="submit" class="login-btn" id="login-btn">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const errEl = document.getElementById('error-msg');
+    const btn = document.getElementById('login-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          window.location.href = '/';
+        } else {
+          errEl.textContent = data.error || 'Login failed.';
+          errEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('hidden');
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+    });
+  </script>
+</body>
+</html>
