@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ScrumFlow — A premium scrum board for team coordination, task management, and real-time communication.">
+  <title>ScrumFlow — Team Scrum Board</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── Header ── -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <div class="logo-icon">⚡</div>
+          ScrumFlow
+        </div>
+        <button class="sprint-selector" id="sprint-selector">
+          <span id="sprint-name">Sprint 1</span>
+          <span>▾</span>
+        </button>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <span class="icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search tasks…" autocomplete="off">
+        </div>
+        <button class="header-btn" id="btn-chat" title="Team Chat">
+          💬
+          <span class="badge hidden" id="chat-badge">0</span>
+        </button>
+        <button class="header-btn" id="btn-team" title="Team Members">👥</button>
+      </div>
+    </header>
+
+    <!-- ── Toolbar ── -->
+    <div class="toolbar">
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="assignee" id="filter-assignee">👤 Member ▾</button>
+        <button class="filter-btn" data-filter="priority" id="filter-priority">🔴 Priority ▾</button>
+        <button class="filter-btn" data-filter="label" id="filter-label">🏷 Label ▾</button>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <span>Progress</span>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <span class="metric-value" id="progress-pct">0%</span>
+        </div>
+        <div class="metric">
+          <span>Tasks</span>
+          <span class="metric-value" id="total-tasks">0</span>
+        </div>
+        <div class="metric">
+          <span>Points</span>
+          <span class="metric-value" id="total-points">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Board + Chat ── -->
+    <div class="board-wrapper">
+      <div class="board" id="board">
+        <!-- Columns rendered by JS -->
+      </div>
+
+      <!-- Chat Panel -->
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">
+          <span class="chat-header-title">💬 Team Chat</span>
+          <button class="modal-close" id="chat-close">✕</button>
+        </div>
+        <div class="chat-channels" id="chat-channels">
+          <button class="channel-btn active" data-channel="general"># general</button>
+          <button class="channel-btn" data-channel="blockers"># blockers</button>
+          <button class="channel-btn" data-channel="ideas"># ideas</button>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Type a message…" autocomplete="off">
+          <button class="chat-send-btn" id="chat-send">➤</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Task Modal ── -->
+  <div class="modal-overlay" id="task-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">New Task</h2>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="task-id">
+        <div class="form-group">
+          <label class="form-label" for="task-title">Title</label>
+          <input class="form-input" type="text" id="task-title" placeholder="Enter task title…">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="task-desc">Description</label>
+          <textarea class="form-textarea" id="task-desc" placeholder="Describe the task…"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="task-priority">Priority</label>
+            <select class="form-select" id="task-priority">
+              <option value="low">🟢 Low</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="high">🟠 High</option>
+              <option value="critical">🔴 Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="task-points">Story Points</label>
+            <select class="form-select" id="task-points">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="5">5</option>
+              <option value="8">8</option>
+              <option value="13">13</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="task-assignee">Assignee</label>
+            <select class="form-select" id="task-assignee">
+              <option value="">Unassigned</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="task-due">Due Date</label>
+            <input class="form-input" type="date" id="task-due">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="task-label">Label</label>
+          <select class="form-select" id="task-label">
+            <option value="">None</option>
+            <option value="feature">Feature</option>
+            <option value="bug">Bug</option>
+            <option value="design">Design</option>
+            <option value="infra">Infra</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-danger hidden" id="task-delete">Delete</button>
+          <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="task-save">Save Task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Team Panel ── -->
+  <div class="team-overlay" id="team-overlay"></div>
+  <div class="team-panel" id="team-panel">
+    <div class="panel-header">
+      <h3>👥 Team Members</h3>
+      <button class="modal-close" id="team-close">✕</button>
+    </div>
+    <div class="team-list" id="team-list"></div>
+    <div class="team-add-area">
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label">Add Member</label>
+      </div>
+      <div class="team-add-row">
+        <input class="form-input" type="text" id="new-member-name" placeholder="Name">
+        <button class="btn btn-primary" id="add-member-btn" style="padding:8px 14px;">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filter Dropdowns (positioned absolutely via JS) ── -->
+  <div class="modal-overlay hidden" id="filter-overlay" style="background:transparent;backdrop-filter:none;"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
