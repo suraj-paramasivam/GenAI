@@ -1,8 +1,11 @@
-/* ═══════════════════════════════════════════
-   team collaborator - Kekron Mekron Inc — app.js
-   ═══════════════════════════════════════════ */
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ * TEAM COLLABORATOR - KEKRON MEKRON INC
+ * Frontend Logic (Vanilla JavaScript)
+ * ══════════════════════════════════════════════════════════════════════════
+ */
 
-// ── Constants ──
+// ── Configuration Constants ──
 const COLUMNS = [
   { id: 'backlog',  title: 'Backlog',     color: '#6366f1' },
   { id: 'todo',     title: 'To Do',       color: '#3b82f6' },
@@ -19,12 +22,15 @@ const AVATAR_COLORS = [
   '#6366f1','#8b5cf6','#ec4899','#3b82f6','#14b8a6','#f59e0b','#ef4444','#22c55e'
 ];
 
-// ── State ──
-let state = loadState();
-let activeChannel = 'general';
+// ── Application State ──
+let state = loadState(); // Load initial state from LocalStorage
+let activeChannel = 'general'; // Currently selected chat channel
 let activeFilters = { assignee: '', priority: '', label: '', search: '' };
-let editingTaskId = null;
+let editingTaskId = null; // Track which task is being edited in the modal
 
+/**
+ * Returns the default application state if no saved state exists.
+ */
 function defaultState() {
   return {
     members: [
@@ -70,41 +76,62 @@ function defaultState() {
   };
 }
 
+/**
+ * Persistence: Loads state from browser local storage.
+ */
 function loadState() {
   try {
     const raw = localStorage.getItem('scrumflow_state');
     if (raw) return JSON.parse(raw);
-  } catch (e) { /* ignore */ }
+  } catch (e) { /* Fallback to default if parsing fails */ }
   return defaultState();
 }
 
+/**
+ * Persistence: Saves current state to browser local storage.
+ */
 function saveState() {
   localStorage.setItem('scrumflow_state', JSON.stringify(state));
 }
 
-// ── Helpers ──
-function $(sel) { return document.querySelector(sel); }
-function $$(sel) { return document.querySelectorAll(sel); }
-function uid() { return 't' + (state.nextId++); }
-function getMember(id) { return state.members.find(m => m.id === id); }
-function initials(name) { return name.split(' ').map(w => w[0]).join('').toUpperCase(); }
+// ── Utility Helpers ──
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+const uid = () => 't' + (state.nextId++); // Generates unique task IDs
+const getMember = (id) => state.members.find(m => m.id === id);
+const initials = (name) => name.split(' ').map(w => w[0]).join('').toUpperCase();
 
+/**
+ * Formats ISO date to readable time string.
+ */
 function formatTime(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
+
+/**
+ * Formats YYYY-MM-DD to readable date (e.g., "May 2").
+ */
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+/**
+ * Checks if a date string is before the current moment.
+ */
 function isOverdue(dateStr) {
   if (!dateStr) return false;
   return new Date(dateStr + 'T23:59:59') < new Date();
 }
 
-// ── Render Board ──
+// ── Board Rendering Logic ──
+
+/**
+ * Main render function for the Kanban board.
+ */
 function renderBoard() {
   const board = $('#board');
   board.innerHTML = '';
@@ -131,13 +158,13 @@ function renderBoard() {
     const cardsContainer = colEl.querySelector('.column-cards');
     tasks.forEach(task => cardsContainer.appendChild(createCard(task)));
 
-    // Drag-and-drop on column
+    // Drag-and-drop event listeners on column
     cardsContainer.addEventListener('dragover', onDragOver);
     cardsContainer.addEventListener('dragenter', onDragEnter);
     cardsContainer.addEventListener('dragleave', onDragLeave);
     cardsContainer.addEventListener('drop', onDrop);
 
-    // Add-card button
+    // Click handler for creating new tasks in this column
     colEl.querySelector('.add-card-btn').addEventListener('click', () => openModal(null, col.id));
 
     board.appendChild(colEl);
@@ -146,6 +173,9 @@ function renderBoard() {
   updateMetrics();
 }
 
+/**
+ * Creates a draggable card element for a task.
+ */
 function createCard(task) {
   const card = document.createElement('div');
   card.className = 'task-card';
@@ -187,13 +217,20 @@ function createCard(task) {
   return card;
 }
 
+/**
+ * Escapes HTML characters to prevent XSS.
+ */
 function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
 }
 
-// ── Filters ──
+// ── Filtering Logic ──
+
+/**
+ * Applies active filters (assignee, priority, search, etc.) to the tasks list.
+ */
 function getFilteredTasks() {
   return state.tasks.filter(t => {
     if (activeFilters.assignee && t.assignee !== activeFilters.assignee) return false;
@@ -207,7 +244,11 @@ function getFilteredTasks() {
   });
 }
 
-// ── Metrics ──
+// ── Metric Updates ──
+
+/**
+ * Updates the UI metrics (total tasks, total points, progress bar).
+ */
 function updateMetrics() {
   const total = state.tasks.length;
   const done = state.tasks.filter(t => t.column === 'done').length;
@@ -220,7 +261,7 @@ function updateMetrics() {
   $('#total-points').textContent = points;
 }
 
-// ── Drag & Drop ──
+// ── Drag & Drop Event Handlers ──
 let draggedId = null;
 
 function onDragStart(e) {
@@ -247,7 +288,13 @@ function onDrop(e) {
   }
 }
 
-// ── Task Modal ──
+// ── Task Management Modal ──
+
+/**
+ * Opens the task creation/editing modal.
+ * @param {string|null} taskId - ID of the task to edit, or null for new task.
+ * @param {string} defaultColumn - Default column to assign if new task.
+ */
 function openModal(taskId, defaultColumn) {
   editingTaskId = taskId || null;
   const modal = $('#task-modal');
@@ -262,7 +309,7 @@ function openModal(taskId, defaultColumn) {
   $('#task-due').value = task ? (task.due || '') : '';
   $('#task-label').value = task ? (task.label || '') : '';
 
-  // Populate assignee dropdown
+  // Populate assignee dropdown from state members
   const sel = $('#task-assignee');
   sel.innerHTML = '<option value="">Unassigned</option>';
   state.members.forEach(m => {
@@ -273,8 +320,6 @@ function openModal(taskId, defaultColumn) {
   sel.value = task ? (task.assignee || '') : '';
 
   $('#task-delete').classList.toggle('hidden', !task);
-
-  // Store default column for new tasks
   modal.dataset.defaultColumn = defaultColumn || 'backlog';
   modal.classList.add('open');
   setTimeout(() => $('#task-title').focus(), 200);
@@ -285,6 +330,9 @@ function closeModal() {
   editingTaskId = null;
 }
 
+/**
+ * Saves task data from modal to state.
+ */
 function saveTask() {
   const title = $('#task-title').value.trim();
   if (!title) { $('#task-title').focus(); return; }
@@ -315,6 +363,9 @@ function saveTask() {
   renderBoard();
 }
 
+/**
+ * Removes the currently edited task from state.
+ */
 function deleteTask() {
   if (!editingTaskId) return;
   state.tasks = state.tasks.filter(t => t.id !== editingTaskId);
@@ -323,7 +374,11 @@ function deleteTask() {
   renderBoard();
 }
 
-// ── Chat ──
+// ── Team Communication (Chat) Logic ──
+
+/**
+ * Renders chat messages for the currently active channel.
+ */
 function renderChat() {
   const container = $('#chat-messages');
   const messages = state.chat[activeChannel] || [];
@@ -358,6 +413,7 @@ function renderChat() {
     container.appendChild(el);
   });
 
+  // Keep typing indicator visible if AI is thinking
   if (document.querySelector('.typing-indicator')) {
     const el = document.createElement('div');
     el.className = 'chat-msg ai';
@@ -374,33 +430,40 @@ function renderChat() {
   container.scrollTop = container.scrollHeight;
 }
 
+/**
+ * Handles sending a message from the current user.
+ */
 function sendChatMessage() {
   const input = $('#chat-input');
   const text = input.value.trim();
   if (!text) return;
 
-  // Default sender is first member (simulating current user)
+  // Default sender is the first team member (Alex)
   const sender = state.members[0]?.id || 'm1';
   if (!state.chat[activeChannel]) state.chat[activeChannel] = [];
   
-  state.chat[activeChannel].push({
-    sender,
-    text,
-    time: new Date().toISOString(),
-  });
+  state.chat[activeChannel].push({ sender, text, time: new Date().toISOString() });
 
   input.value = '';
   saveState();
   renderChat();
   
+  // Trigger AI if in the agent channel
   if (activeChannel === 'agent') {
     handleGeminiRequest(text);
   }
 }
 
+// ── AI Integration (Gemini Proxy) ──
+
+/**
+ * Proxies chat requests to the backend AI endpoint.
+ * Gathers relevant context (tasks, chat) to provide a tailored LLM response.
+ */
 async function handleGeminiRequest(userText) {
-  // Show typing indicator
   const container = $('#chat-messages');
+  
+  // Show visual typing indicator
   const typingHtml = `
     <div class="chat-msg ai" id="ai-typing-indicator">
       <div class="chat-msg-avatar" style="background:transparent">✨</div>
@@ -414,8 +477,9 @@ async function handleGeminiRequest(userText) {
   container.scrollTop = container.scrollHeight;
 
   try {
-    // Gather context for the AI
     const currentMember = state.members[0] || {};
+    
+    // Build context for the prompt
     const myTasks = state.tasks.filter(t => t.assignee === currentMember.id).map(t =>
       `- ${t.title} (Status: ${t.column}, Priority: ${t.priority})`
     );
@@ -430,7 +494,7 @@ async function handleGeminiRequest(userText) {
       });
     });
 
-    // Call backend proxy — API key is stored securely server-side via Secret Manager
+    // Call the secure backend proxy (v1 stable endpoint)
     const response = await fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -463,13 +527,17 @@ async function handleGeminiRequest(userText) {
   renderChat();
 }
 
+/**
+ * Toggles the side-out chat panel.
+ */
 function toggleChat() {
   const panel = $('#chat-panel');
   panel.classList.toggle('open');
   if (panel.classList.contains('open')) renderChat();
 }
 
-// ── Team Panel ──
+// ── Team Management Panel ──
+
 function renderTeam() {
   const list = $('#team-list');
   list.innerHTML = '';
@@ -497,6 +565,9 @@ function closeTeamPanel() {
   $('#team-panel').classList.remove('open');
 }
 
+/**
+ * Adds a new member to the team state.
+ */
 function addMember() {
   const nameInput = $('#new-member-name');
   const name = nameInput.value.trim();
@@ -508,7 +579,7 @@ function addMember() {
   renderTeam();
 }
 
-// ── Filter Dropdown Logic ──
+// ── Filter Dropdown Component Logic ──
 let activeFilterDropdown = null;
 
 function showFilterDropdown(type, btnEl) {
@@ -548,7 +619,7 @@ function showFilterDropdown(type, btnEl) {
   document.body.appendChild(dd);
   activeFilterDropdown = dd;
 
-  // Close on outside click
+  // Global click handler to close dropdown when clicking outside
   setTimeout(() => {
     document.addEventListener('click', closeFilterDropdown, { once: true });
   }, 0);
@@ -561,6 +632,9 @@ function closeFilterDropdown() {
   }
 }
 
+/**
+ * Returns available filter options based on type.
+ */
 function getFilterItems(type) {
   const all = { label: '✦ All', value: '' };
   if (type === 'assignee') {
@@ -585,6 +659,9 @@ function getFilterItems(type) {
   return [all];
 }
 
+/**
+ * Updates filter button UI state (active highlight).
+ */
 function updateFilterButtons() {
   const hasFilter = activeFilters.assignee || activeFilters.priority || activeFilters.label;
   $$('.filter-btn').forEach(btn => {
@@ -597,23 +674,29 @@ function updateFilterButtons() {
   });
 }
 
-// ── Event Binding ──
+// ── Event Binding & Initialization ──
+
+/**
+ * Main application entry point.
+ * Binds all static event listeners.
+ */
 function init() {
   renderBoard();
 
-  // Modal
+  // Task Modal Handlers
   $('#modal-close').addEventListener('click', closeModal);
   $('#modal-cancel').addEventListener('click', closeModal);
   $('#task-save').addEventListener('click', saveTask);
   $('#task-delete').addEventListener('click', deleteTask);
   $('#task-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 
-  // Chat
+  // Chat Handlers
   $('#btn-chat').addEventListener('click', toggleChat);
   $('#chat-close').addEventListener('click', toggleChat);
   $('#chat-send').addEventListener('click', sendChatMessage);
   $('#chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMessage(); });
 
+  // Channel Selection
   $$('.channel-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       $$('.channel-btn').forEach(b => b.classList.remove('active'));
@@ -623,23 +706,25 @@ function init() {
     });
   });
 
-  // Team
+  // Team Management Handlers
   $('#btn-team').addEventListener('click', openTeamPanel);
   $('#team-close').addEventListener('click', closeTeamPanel);
   $('#team-overlay').addEventListener('click', closeTeamPanel);
   $('#add-member-btn').addEventListener('click', addMember);
   $('#new-member-name').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
 
-  // Search
+  // Search Input Handler
   $('#search-input').addEventListener('input', e => {
     activeFilters.search = e.target.value;
     renderBoard();
   });
 
-  // Filters
+  // Filter Dropdown Handlers
   $('#filter-assignee').addEventListener('click', e => showFilterDropdown('assignee', e.currentTarget));
   $('#filter-priority').addEventListener('click', e => showFilterDropdown('priority', e.currentTarget));
   $('#filter-label').addEventListener('click', e => showFilterDropdown('label', e.currentTarget));
+  
+  // "All" Filter Reset
   $$('.filter-btn[data-filter="all"]').forEach(btn => {
     btn.addEventListener('click', () => {
       activeFilters = { assignee: '', priority: '', label: '', search: '' };
@@ -649,7 +734,7 @@ function init() {
     });
   });
 
-  // Keyboard shortcut: Escape closes modals
+  // Global Accessibility Keyboard Shortcuts
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       closeModal();
@@ -660,17 +745,17 @@ function init() {
     }
   });
 
-  // Help Modal
+  // Help Modal Handlers
   $('#btn-help').addEventListener('click', () => $('#help-overlay').classList.remove('hidden'));
   $('#help-close').addEventListener('click', () => $('#help-overlay').classList.add('hidden'));
   $('#help-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) $('#help-overlay').classList.add('hidden'); });
 
-  // Settings Modal
+  // Settings Modal Handlers
   $('#btn-settings').addEventListener('click', () => $('#settings-overlay').classList.remove('hidden'));
   $('#settings-close').addEventListener('click', () => $('#settings-overlay').classList.add('hidden'));
   $('#settings-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) $('#settings-overlay').classList.add('hidden'); });
 
-  // Theme Toggling
+  // Theme Toggling Logic
   const savedTheme = localStorage.getItem('theme') || 'dark';
   setTheme(savedTheme);
   const radio = $(`input[name="theme-radio"][value="${savedTheme}"]`);
@@ -683,11 +768,16 @@ function init() {
   });
 }
 
+/**
+ * Updates the visual theme of the application.
+ * @param {string} theme - 'dark', 'light', or 'oled'.
+ */
 function setTheme(theme) {
   document.body.classList.remove('theme-light', 'theme-oled');
   if (theme === 'light') document.body.classList.add('theme-light');
   if (theme === 'oled') document.body.classList.add('theme-oled');
-  localStorage.setItem('theme', theme);
+  localStorage.setItem('theme', theme); // Save preference
 }
 
+// Bootstrap application on DOM load
 document.addEventListener('DOMContentLoaded', init);
