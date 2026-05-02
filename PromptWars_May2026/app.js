@@ -88,10 +88,29 @@ function loadState() {
 }
 
 /**
- * Persistence: Saves current state to browser local storage.
+ * Persistence: Saves current state to browser local storage and syncs to BigQuery.
  */
 function saveState() {
   localStorage.setItem('scrumflow_state', JSON.stringify(state));
+  
+  // Sync all tasks to BQ (background delta sync could be more efficient, but this is a simple start)
+  // For now, we sync the last modified task when saveTask is called.
+  // See saveTask() for the implementation.
+}
+
+/**
+ * Background helper to sync a specific object to BigQuery.
+ */
+async function syncToBigQuery(type, data) {
+  try {
+    await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, data })
+    });
+  } catch (e) {
+    console.warn('[Sync Warning] Could not sync to BigQuery:', e.message);
+  }
 }
 
 // ── Utility Helpers ──
@@ -361,6 +380,13 @@ function saveTask() {
   saveState();
   closeModal();
   renderBoard();
+
+  // Background Sync to BigQuery
+  syncToBigQuery('task_update', {
+    ...data,
+    id: editingTaskId || state.tasks[state.tasks.length - 1].id,
+    column: editingTaskId ? state.tasks.find(t => t.id === editingTaskId).column : ($('#task-modal').dataset.defaultColumn || 'backlog')
+  });
 }
 
 /**
@@ -440,14 +466,21 @@ function sendChatMessage() {
 
   // Default sender is the first team member (Alex)
   const sender = state.members[0]?.id || 'm1';
-  if (!state.chat[activeChannel]) state.chat[activeChannel] = [];
+  const msgData = { sender, text, time: new Date().toISOString() };
   
-  state.chat[activeChannel].push({ sender, text, time: new Date().toISOString() });
+  if (!state.chat[activeChannel]) state.chat[activeChannel] = [];
+  state.chat[activeChannel].push(msgData);
 
   input.value = '';
   saveState();
   renderChat();
   
+  // Background Sync to BigQuery for analytical purposes
+  syncToBigQuery('chat_message', {
+    ...msgData,
+    channel: activeChannel
+  });
+
   // Trigger AI if in the agent channel
   if (activeChannel === 'agent') {
     handleGeminiRequest(text);

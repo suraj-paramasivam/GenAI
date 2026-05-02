@@ -200,6 +200,47 @@ Please provide a helpful, concise summary or answer based on this context. Forma
   }
 });
 
+// ── BigQuery Integration (Analytical Storage) ──
+const { BigQuery } = require('@google-cloud/bigquery');
+const bq = new BigQuery();
+const DATASET_ID = 'scrum_analytics';
+
+/**
+ * Endpoint to sync application state to BigQuery for future analysis.
+ * Streams tasks and chat messages into their respective tables.
+ */
+app.post('/api/sync', requireAuth, async (req, res) => {
+  const { type, data } = req.body;
+  
+  try {
+    if (type === 'task_update') {
+      // Stream task record
+      await bq.dataset(DATASET_ID).table('tasks').insert({
+        task_id: data.id,
+        title: data.title,
+        column_id: data.column,
+        priority: data.priority,
+        assignee_id: data.assignee,
+        points: data.points,
+        timestamp: new Date().toISOString()
+      });
+    } else if (type === 'chat_message') {
+      // Stream chat message
+      await bq.dataset(DATASET_ID).table('chat_messages').insert({
+        sender: data.sender,
+        text: data.text,
+        channel: data.channel,
+        timestamp: new Date().toISOString()
+      });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    // Log error but don't break the frontend experience
+    console.error('[BigQuery Sync Error]:', error.message);
+    res.status(200).json({ success: false, error: 'Sync failed' });
+  }
+});
+
 // ── Protected Static Assets ──
 
 app.get('/', requireAuth, (req, res) => {
