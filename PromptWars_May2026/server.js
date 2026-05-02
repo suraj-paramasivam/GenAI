@@ -138,7 +138,7 @@ The user asks: "${userMessage}"
 Please provide a helpful, concise summary or answer based on this context. Format nicely.`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -173,7 +173,11 @@ app.get('/app.js', requireAuth, (req, res) => {
 });
 
 // ── Start ──
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Project: ${PROJECT_ID}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Project: ${PROJECT_ID}`);
+  });
+}
+
+module.exports = app;

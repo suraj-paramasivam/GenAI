@@ -10,6 +10,12 @@ PROJECT_ID="pw-chennai"
 REGION="us-central1"
 SERVICE_NAME="team-collaborator"
 
+echo "=== Running Automated Tests ==="
+npm install
+npm test
+# npm run test:e2e # Optional: uncomment if browser dependencies are installed in CI
+
+echo "=== Setting project ==="
 # Sample credentials to store in Secret Manager
 SAMPLE_USERNAME="admin"
 SAMPLE_PASSWORD="KekronMekron@2026"
