@@ -1,10 +1,3 @@
-name: Mirror TRIBE v2 to GitHub Release
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
 jobs:
   mirror:
     runs-on: ubuntu-latest
@@ -13,7 +6,10 @@ jobs:
         run: |
           curl -L -o config.yaml https://huggingface.co/facebook/tribev2/resolve/main/config.yaml
           curl -L -o best.ckpt https://huggingface.co/facebook/tribev2/resolve/main/best.ckpt
-          echo "9c79ffff6b642b7b0c71d558c935fb3fa33f2788bfb509feead94fafbba2f321  best.ckpt" | sha256sum -c -
+          echo "9c79ffff6b642b7b0c71d558c935fb3fa33f2788bfb509feead94fafbba2d321  best.ckpt" | sha256sum -c -
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Publish to GitHub Release
         env:
